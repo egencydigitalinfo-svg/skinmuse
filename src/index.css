@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+/* ===== Animations ===== */
+@keyframes shake {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(8deg); }
+  60% { transform: rotate(-6deg); }
+  80% { transform: rotate(6deg); }
+}
+.animate-shake { animation: shake 0.6s ease-in-out infinite; }
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+.animate-marquee { animation: marquee linear infinite; }
+
+@keyframes popupFade {
+  0% { opacity: 0; transform: scale(0.92) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-popupFade { animation: popupFade 0.35s ease-out; }
+
+/* ===== Base Styles ===== */
+@layer base {
+  :root {
+    /* SKIN MUSE Color Palette */
+    --background: 36 20% 96%;
+    --foreground: 168 36% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 168 36% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 168 36% 15%;
+    --primary: 168 36% 15%;
+    --primary-foreground: 36 32% 82%;
+    --secondary: 36 32% 82%;
+    --secondary-foreground: 168 36% 15%;
+    --muted: 36 20% 94%;
+    --muted-foreground: 168 20% 40%;
+    --accent: 36 32% 82%;
+    --accent-foreground: 168 36% 15%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 36 20% 88%;
+    --input: 36 20% 88%;
+    --ring: 168 36% 15%;
+    --radius: 0.5rem;
+    --skin-dry: 0 0% 94%;
+    --skin-oily: 25 15% 52%;
+    --skin-combination: 30 35% 92%;
+    --skin-acne: 0 5% 13%;
+    --gradient-hero: linear-gradient(135deg, hsl(168, 36%, 15%) 0%, hsl(168, 36%, 20%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(36, 32%, 82%) 0%, hsl(36, 42%, 88%) 100%);
+  }
+
+  .dark {
+    --background: 168 36% 15%;
+    --foreground: 36 32% 82%;
+    --card: 168 36% 18%;
+    --card-foreground: 36 32% 82%;
+    --popover: 168 36% 18%;
+    --popover-foreground: 36 32% 82%;
+    --primary: 36 32% 82%;
+    --primary-foreground: 168 36% 15%;
+    --secondary: 168 36% 22%;
+    --secondary-foreground: 36 32% 82%;
+    --muted: 168 36% 22%;
+    --muted-foreground: 36 20% 65%;
+    --accent: 36 32% 82%;
+    --accent-foreground: 168 36% 15%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 168 36% 22%;
+    --input: 168 36% 22%;
+    --ring: 36 32% 82%;
+  }
+
+  /* /* Apply font to everything */
+  *, *::before, *::after {
+    font-family: 'Avenir', 'Helvetica', 'Arial', sans-serif !important;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  h1, h2, h3, h4, h5, h6,
+  p, span, a, button, input, textarea, select {
+   font-family: 'Avenir', 'Helvetica', 'Arial', sans-serif !important;
+  }
+}
+ 
+/* ===== Utilities ===== */
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .gradient-hero { background: var(--gradient-hero); }
+  .gradient-gold { background: var(--gradient-gold); }
+}
