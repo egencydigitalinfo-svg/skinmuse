@@ -234,7 +234,7 @@ const Home = () => {
       </div>
     );
 
-
+const parentCategories = categories.filter(cat => !cat.parent_id);
   return (
     <div className="min-h-screen bg-background">
       <section className="relative overflow-hidden text-white">
@@ -380,7 +380,7 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="py-10 sm:py-10">
+      {/* <section className="py-10 sm:py-10">
         <div className="container">
           <h2 className="text-3xl md:text-4xl text-foreground font-bold font-serif text-center mb-10">
             Shop by Category
@@ -410,6 +410,62 @@ const Home = () => {
               className="rounded-lg"
             >
               {categories.map((cat) => (
+                <SwiperSlide key={cat._id}>
+                  <Link
+                    to={`/products?category=${encodeURIComponent(cat.category)}`}
+                    className="group relative border-foreground overflow-hidden rounded-lg aspect-[5/3] sm:aspect-[5/2] bg-card block"
+                  >
+                    <img
+                      src={cat.image || "/images/placeholder.png"}
+                      alt={cat.title}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-br from-foreground/30 to-foreground/60 z-10" />
+                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-background text-center px-2">
+                      <h3 className="text-2xl sm:text-4xl font-serif font-bold mb-1 sm:mb-2">
+                        {cat.title}
+                      </h3>
+                    </div>
+                  </Link>
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          </div>
+        </div>
+      </section> */}
+
+      
+
+      <section className="py-10 sm:py-10">
+        <div className="container">
+          <h2 className="text-3xl md:text-4xl text-foreground font-bold font-serif text-center mb-10">
+            Shop by Category
+          </h2>
+
+          <div
+            onMouseEnter={() => categorySwiperRef.current?.autoplay?.stop()}
+            onMouseLeave={() => categorySwiperRef.current?.autoplay?.start()}
+          >
+            <Swiper
+              modules={[Autoplay]}
+              spaceBetween={12}
+              slidesPerView={1}
+              breakpoints={{
+                640: { slidesPerView: 2 },
+                768: { slidesPerView: 2 },
+                1024: { slidesPerView: 2 },
+              }}
+              autoplay={{
+                delay: 3000,
+                disableOnInteraction: false,
+                pauseOnMouseEnter: true,
+              }}
+              loop={true}
+              speed={800}
+              allowTouchMove={true}
+              className="rounded-lg"
+            >
+              {parentCategories.map((cat) => (
                 <SwiperSlide key={cat._id}>
                   <Link
                     to={`/products?category=${encodeURIComponent(cat.category)}`}

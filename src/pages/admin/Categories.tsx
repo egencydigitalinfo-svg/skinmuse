@@ -2,33 +2,28 @@
 
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Plus, Edit, Trash2, Search, X } from "lucide-react";
+import { Plus, Edit, Trash2, Search, X, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Brand } from "@/types/brand";
+import { Cat, ParentCategory } from "@/types/category";
 import { useNavigate } from "react-router-dom";
-import { Cat } from "@/types/category";
 
 const AdminCategories: React.FC = () => {
-  const [catgories, setCategories] = useState<Cat[]>([]);
+  const [categories, setCategories] = useState<Cat[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState<string | null>(null);
   const [preLoading, setPreLoading] = useState(true);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 
-  // === Fetch catgories ===
-  const fetchCatgories = async () => {
+  const fetchCategories = async () => {
     try {
       setPreLoading(true);
       const res = await axios.get("https://backendskinmuse.vercel.app/api/category");
-      const catList = Array.isArray(res.data)
-        ? res.data
-        : [];
-      // Sort by name or date (optional)
-      const sorted = catList.sort((a, b) => a.title.localeCompare(b.title));
+      const catList = Array.isArray(res.data) ? res.data : [];
+      const sorted = catList.sort((a: Cat, b: Cat) => a.title.localeCompare(b.title));
       setCategories(sorted);
     } catch (error) {
       console.error(error);
@@ -39,10 +34,9 @@ const AdminCategories: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchCatgories();
+    fetchCategories();
   }, []);
 
-  // === Delete Brand ===
   const handleDelete = async (id?: string) => {
     if (!id) return;
     try {
@@ -55,7 +49,7 @@ const AdminCategories: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success("Category deleted successfully");
-      fetchCatgories();
+      fetchCategories();
     } catch (e) {
       console.error(e);
       toast.error("Failed to delete category");
@@ -64,24 +58,45 @@ const AdminCategories: React.FC = () => {
     }
   };
 
-  // === Filter by Search ===
-  const filteredCategories = catgories.filter((b) =>
-    b.title.toLowerCase().includes(searchQuery.toLowerCase())
+  const handleEditClick = (cat: Cat) => {
+    navigate(`/admin/editCategory/${cat._id}`);
+  };
+
+  const toggleRow = (id: string) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  // Separate parent categories and build subcategory map
+  const parentCategories = categories.filter((cat) => !cat.parent_id);
+  const subCategoryMap: Record<string, Cat[]> = {};
+
+  categories.forEach((cat) => {
+    if (cat.parent_id) {
+      const parentId =
+        typeof cat.parent_id === "string"
+          ? cat.parent_id
+          : (cat.parent_id as ParentCategory)._id;
+      if (parentId) {
+        if (!subCategoryMap[parentId]) subCategoryMap[parentId] = [];
+        subCategoryMap[parentId].push(cat);
+      }
+    }
+  });
+
+  const filteredParents = parentCategories.filter((cat) =>
+    cat.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  
-    const handleEditClick = (cat: Cat) => {
-      navigate(`/admin/editCategory/${cat._id}`);
-    };
-  
 
   if (preLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center">
-          <div className="w-12 h-12 border-4 border-t-transparent border-blue-600 rounded-full animate-spin"></div>
-          <p className="mt-4 text-lg font-medium text-gray-600">
-            Loading Categories...
-          </p>
+          <div className="w-12 h-12 border-4 border-t-transparent border-blue-600 rounded-full animate-spin" />
+          <p className="mt-4 text-lg font-medium text-gray-600">Loading Categories...</p>
         </div>
       </div>
     );
@@ -91,11 +106,12 @@ const AdminCategories: React.FC = () => {
     <div className="p-4 sm:p-6 md:p-8 space-y-6 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-          Manage Categories
-        </h1>
-        <Button className=" bg-foreground text-background hover:bg-foreground" onClick={() => navigate("/admin/categoryAdd")}>
-          <Plus className="h-4 w-4" /> Add Category
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Manage Categories</h1>
+        <Button
+          className="bg-foreground text-background hover:bg-foreground"
+          onClick={() => navigate("/admin/categoryAdd")}
+        >
+          <Plus className="h-4 w-4 mr-1" /> Add Category
         </Button>
       </div>
 
@@ -128,71 +144,177 @@ const AdminCategories: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Brand List */}
+      {/* Table */}
       <Card>
         <CardHeader>
           <CardTitle>
-            Categories List <span className="text-sm">({filteredCategories.length})</span>
+            Categories List{" "}
+            <span className="text-sm font-normal text-muted-foreground">
+              ({filteredParents.length} parent{filteredParents.length !== 1 ? "s" : ""})
+            </span>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredCategories.map((cat) => (
-              <Card
-                key={cat._id}
-                className="overflow-hidden shadow-md hover:shadow-lg transition-shadow flex flex-col h-full"
-              >
-                {/* Logo */}
-                {cat.image ? (
-                  <img
-                    src={cat.image}
-                    alt={cat.title}
-                    className="w-full h-full object-contain bg-background"
-                  />
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-gray-100 text-gray-600 text-left">
+                  <th className="px-4 py-3 w-8" />
+                  <th className="px-4 py-3 w-16">Image</th>
+                  <th className="px-4 py-3">Title</th>
+                  <th className="px-4 py-3">Subcategories</th>
+                  <th className="px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredParents.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="text-center py-10 text-gray-400">
+                      No categories found.
+                    </td>
+                  </tr>
                 ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
-                    No image
-                  </div>
+                  filteredParents.map((cat) => {
+                    const subs = subCategoryMap[cat._id ?? ""] || [];
+                    const isExpanded = expandedRows.has(cat._id ?? "");
+
+                    return (
+                      <React.Fragment key={cat._id}>
+                        {/* Parent Row */}
+                        <tr className="border-b hover:bg-gray-50 transition-colors">
+                          {/* Expand Toggle */}
+                          <td className="px-4 py-3">
+                            {subs.length > 0 ? (
+                              <button
+                                onClick={() => toggleRow(cat._id ?? "")}
+                                className="text-gray-500 hover:text-gray-800 transition-colors"
+                              >
+                                {isExpanded ? (
+                                  <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4" />
+                                )}
+                              </button>
+                            ) : (
+                              <span className="w-4 inline-block" />
+                            )}
+                          </td>
+
+                          {/* Image */}
+                          <td className="px-4 py-3">
+                            {cat.image ? (
+                              <img
+                                src={cat.image}
+                                alt={cat.title}
+                                className="w-10 h-10 object-contain rounded border bg-white"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-400">
+                                N/A
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Title */}
+                          <td className="px-4 py-3 font-medium text-gray-800">{cat.title}</td>
+
+                          {/* Subcategory count badge */}
+                          <td className="px-4 py-3">
+                            {subs.length > 0 ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                                {subs.length} sub{subs.length !== 1 ? "categories" : "category"}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 text-xs">—</span>
+                            )}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="px-4 py-3 text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEditClick(cat)}
+                                className="h-8 px-3"
+                              >
+                                <Edit className="h-3.5 w-3.5 mr-1" /> Edit
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDelete(cat._id)}
+                                disabled={loading === cat._id}
+                                className="h-8 px-3 bg-foreground text-background"
+                              >
+                                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                                {loading === cat._id ? "Deleting..." : "Delete"}
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* Subcategory Expanded Rows */}
+                        {isExpanded &&
+                          subs.map((sub) => (
+                            <tr
+                              key={sub._id}
+                              className="border-b bg-blue-50/40 hover:bg-blue-50 transition-colors"
+                            >
+                              {/* Indent indicator */}
+                              <td className="px-4 py-2" />
+                              <td className="px-4 py-2 pl-8">
+                                {sub.image ? (
+                                  <img
+                                    src={sub.image}
+                                    alt={sub.title}
+                                    className="w-8 h-8 object-contain rounded border bg-white"
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center text-xs text-gray-400">
+                                    N/A
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-4 py-2 text-gray-600 pl-2">
+                                <span className="text-gray-400 mr-2">↳</span>
+                                {sub.title}
+                              </td>
+                              <td className="px-4 py-2">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                                  subcategory
+                                </span>
+                              </td>
+                              <td className="px-4 py-2 text-right">
+                                <div className="flex justify-end gap-2">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleEditClick(sub)}
+                                    className="h-7 px-2 text-xs"
+                                  >
+                                    <Edit className="h-3 w-3 mr-1" /> Edit
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => handleDelete(sub._id)}
+                                    disabled={loading === sub._id}
+                                    className="h-7 px-2 text-xs bg-foreground text-background"
+                                  >
+                                    <Trash2 className="h-3 w-3 mr-1" />
+                                    {loading === sub._id ? "Deleting..." : "Delete"}
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                      </React.Fragment>
+                    );
+                  })
                 )}
-
-                {/* Details */}
-                <div className="p-4 flex flex-col flex-grow">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        {cat.title}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        Category: {cat.category}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2 mt-auto pt-3">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="flex-1 hover:bg-foreground"
-                     onClick={() => handleEditClick(cat)}
-                    >
-                      <Edit className="h-4 w-4" /> Edit
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="flex-1 bg-foreground text-background"
-                      onClick={() => handleDelete(cat._id)}
-                      disabled={loading === cat._id}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      {loading === cat._id ? "Deleting..." : "Delete"}
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
+              </tbody>
+            </table>
           </div>
         </CardContent>
       </Card>

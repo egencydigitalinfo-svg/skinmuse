@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Select,
@@ -19,68 +18,109 @@ import { toast } from "sonner";
 export default function CategoryUploadForm() {
     const [formData, setFormData] = useState({
         name: "",
-        category: ""
+        parent_id: "none",
     });
+
     const [bgImage, setBgImage] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [parentCategories, setParentCategories] = useState<any[]>([]);
 
-    const categories = ["makeup", "skincare", "haircare", "bath&body"];
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await axios.get(
+                    "https://backendskinmuse.vercel.app/api/category"
+                );
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+                // ✅ Only show categories where parent_id is null (top-level/main categories)
+                const topLevelOnly = res.data.filter(
+                    (cat: any) => cat.parent_id === null || cat.parent_id === undefined
+                );
+
+                setParentCategories(topLevelOnly);
+            } catch (err) {
+                console.error(err);
+                toast.error("Failed to load categories");
+            }
+        };
+        fetchCategories();
+    }, []);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleBgImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] || null;
         setBgImage(file);
-        if (file) {
-            const previewUrl = URL.createObjectURL(file);
-            setPreviewUrl(previewUrl);
-        } else {
-            setPreviewUrl(null);
-        }
+        setPreviewUrl(file ? URL.createObjectURL(file) : null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
+        // console.log("formData state:", formData);
+        //  console.log("parent_id value:", formData.parent_id);
         if (!bgImage) {
-            toast.error("Please select a bg image!");
+            toast.error("Please select an image!");
             return;
         }
 
-        if (!formData.name || !formData.category) {
-            toast.error("Please fill in all required fields!");
+        if (!formData.name.trim()) {
+            toast.error("Please enter a category name!");
             return;
         }
 
         try {
             setLoading(true);
-            const data = new FormData();
 
-            Object.entries(formData).forEach(([key, value]) => {
-                data.append(key, value);
-            });
+            const data = new FormData();
+            data.append("name", formData.name);
             data.append("image", bgImage);
+
+            // ✅ Only append parent_id if a parent is selected
+            if (formData.parent_id !== "none") {
+                data.append("parent_id", formData.parent_id);
+            }
+
             const token =
                 localStorage.getItem("skinmuse_admin_token") ||
                 localStorage.getItem("skinmuse_superadmin_token") ||
                 "";
 
-            await axios.post("https://backendskinmuse.vercel.app/api/category", data, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                    Authorization: `Bearer ${token}`, // 👈 your user’s JWT token
-                },
-            });
-            toast.success("✅ Category added successfully!");
-            setFormData({ name: "", category: "" });
+            await axios.post(
+                "https://backendskinmuse.vercel.app/api/category",
+                data,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            toast.success("✅ Category Added Successfully!");
+
+            // ✅ Reset form
+            setFormData({ name: "", parent_id: "none" });
             setBgImage(null);
             setPreviewUrl(null);
-        } catch (err) {
+
+            // console.log("FormData parent_id:", data.get("parent_id"));
+            // ✅ Refresh parent list so new top-level categories appear instantly
+            const res = await axios.get(
+                "https://backendskinmuse.vercel.app/api/category"
+            );
+            const topLevelOnly = res.data.filter(
+                (cat: any) => cat.parent_id === null || cat.parent_id === undefined
+            );
+            setParentCategories(topLevelOnly);
+
+        } catch (err: any) {
             console.error(err);
-            toast.error("❌ Failed to Add Category!");
+            const msg = err?.response?.data?.message || "Error adding category";
+            toast.error(`❌ ${msg}`);
         } finally {
             setLoading(false);
         }
@@ -91,66 +131,73 @@ export default function CategoryUploadForm() {
             <Card>
                 <CardHeader>
                     <CardTitle className="text-2xl font-semibold">
-                        Add Category
+                        Add Category / SubCategory
                     </CardTitle>
                 </CardHeader>
+
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Brand Name */}
+
+                        {/* Title */}
                         <div>
                             <Label>Title</Label>
                             <Input
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
+                                placeholder="Enter category name"
                                 required
                             />
                         </div>
 
-                        {/* Category */}
+                        {/* Parent Category — only top-level categories shown */}
                         <div>
-                            <Label>Category</Label>
+                            <Label>Parent Category (Optional)</Label>
                             <Select
-                                value={formData.category}
+                                value={formData.parent_id}
                                 onValueChange={(value) =>
-                                    setFormData({ ...formData, category: value })
+                                    setFormData({ ...formData, parent_id: value })
                                 }
                             >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select Category" />
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select Parent (Optional)" />
                                 </SelectTrigger>
-                                <SelectContent className="bg-background text-foreground">
-                                    {categories.map((cat) => (
-                                        <SelectItem className="data-[highlighted]:bg-foreground data-[highlighted]:text-background" key={cat} value={cat}>
-                                            {cat}
+                                <SelectContent
+                                    className="bg-white dark:bg-gray-900 text-black dark:text-white border shadow-lg z-[9999]"
+                                    position="popper"
+                                >
+                                    <SelectItem value="none">No Parent (Main Category)</SelectItem>
+                                    {parentCategories.map((cat) => (
+                                        <SelectItem key={cat._id} value={cat._id}>
+                                            {cat.title}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Leave as "No Parent" to create a main category. Select a parent to create a subcategory.
+                            </p>
                         </div>
 
-                        {/* bgImage Upload */}
+                        {/* Image */}
                         <div>
-                            <Label>Background Image</Label>
+                            <Label>Image</Label>
                             <Input
                                 type="file"
                                 accept="image/*"
                                 onChange={handleBgImageChange}
-                                required
                             />
                             {previewUrl && (
-                                <div className="mt-2 flex justify-center">
-                                    <img
-                                        src={previewUrl}
-                                        alt="Bg Preview"
-                                        className="w-full h-full object-cover border"
-                                    />
-                                </div>
+                                <img
+                                    src={previewUrl}
+                                    alt="preview"
+                                    className="mt-2 w-full h-40 object-cover border rounded-md"
+                                />
                             )}
                         </div>
 
                         {/* Submit */}
-                        <Button type="submit" disabled={loading} className="w-full bg-foreground text-background hover:bg-foreground">
+                        <Button type="submit" disabled={loading} className="w-full">
                             {loading ? "Uploading..." : "Add Category"}
                         </Button>
                     </form>

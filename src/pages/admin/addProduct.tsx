@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import {
+    Select, SelectTrigger, SelectContent, SelectItem, SelectValue
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
@@ -15,54 +17,92 @@ export default function ProductUploadForm() {
         name: "",
         description: "",
         price: "",
-        category: "",
+        category: "",        // stores _id
+        subCategoryId: "",
         brandId: "",
         stock: "",
         skinTypes: [] as string[],
         discount: "",
         ingredients: "",
         productType: "",
-        colors: [] as { name: string; hex: string; stock: string, price: number }[],
-        litres: [] as { amount: string; stock: string, price: number }[], // new for litre variants
+        colors: [] as { name: string; hex: string; stock: string; price: number }[],
+        litres: [] as { amount: string; stock: string; price: number }[],
     });
 
-    // ✅ Multi-image support
     const [images, setImages] = useState<File[]>([]);
     const [previews, setPreviews] = useState<string[]>([]);
-
     const [brands, setBrands] = useState<{ _id: string; name: string; category: string }[]>([]);
+    const [allCategories, setAllCategories] = useState<any[]>([]);
+    const [mainCategories, setMainCategories] = useState<any[]>([]);
+    const [subCategories, setSubCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    const categories = ["makeup", "skincare", "haircare", "bath&body"];
     const skinTypesOptions = ["dry", "oily", "combination", "acne"];
 
-    // ✅ Generate image previews
+    // ✅ Helper — selected category ka title get karo _id se
+    const getSelectedCategoryTitle = (): string => {
+        const found = mainCategories.find((cat) => cat._id === formData.category);
+        return found ? found.title.toLowerCase() : "";
+    };
+
     useEffect(() => {
         const urls = images.map((img) => URL.createObjectURL(img));
         setPreviews(urls);
-
         return () => urls.forEach((url) => URL.revokeObjectURL(url));
     }, [images]);
 
-    // Fetch brands
+    // ✅ Fetch brands
     useEffect(() => {
         const fetchBrands = async () => {
             try {
                 const res = await axios.get("https://backendskinmuse.vercel.app/api/brands");
                 if (Array.isArray(res.data)) setBrands(res.data);
-                else if (res.data?.brands && Array.isArray(res.data.brands)) setBrands(res.data.brands);
+                else if (res.data?.brands) setBrands(res.data.brands);
                 else setBrands([]);
-            } catch (err) {
-                console.error(err);
+            } catch {
                 toast.error("Failed to fetch brands!");
             }
         };
         fetchBrands();
     }, []);
 
+    // ✅ Fetch all categories once
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await axios.get("https://backendskinmuse.vercel.app/api/category");
+                const all = res.data;
+                setAllCategories(all);
+
+                // ✅ Only top-level categories (parent_id is null or undefined)
+                const topLevel = all.filter(
+                    (cat: any) => cat.parent_id === null || cat.parent_id === undefined
+                );
+                setMainCategories(topLevel);
+            } catch {
+                console.error("Failed to fetch categories");
+            }
+        };
+        fetchCategories();
+    }, []);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    // ✅ When main category changes → filter subcategories by parent_id
+    const handleCategoryChange = (value: string) => {
+        // reset dependent fields when category changes
+        setFormData({ ...formData, category: value, subCategoryId: "", colors: [], litres: [] });
+
+        // ✅ Filter subcategories where parent_id._id === selected category _id
+        const subs = allCategories.filter(
+            (cat: any) =>
+                cat.parent_id?._id === value ||
+                cat.parent_id === value
+        );
+        setSubCategories(subs);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -85,37 +125,41 @@ export default function ProductUploadForm() {
             data.append("discount", formData.discount);
             data.append("skinTypes", JSON.stringify(formData.skinTypes));
 
+            if (formData.subCategoryId) {
+                data.append("subcategory", formData.subCategoryId);
+            }
+
             const ingredientsArray = formData.ingredients
                 .split("\n")
                 .map((i) => i.trim())
                 .filter(Boolean);
             data.append("ingredients", JSON.stringify(ingredientsArray));
 
-            // ✅ Append multiple images
             images.forEach((img) => data.append("images", img));
 
-            if (formData.category == "makeup" && formData.colors.length > 0) {
-                const colorsToSend = formData.colors.map(c => ({
+            // ✅ title se check karo — _id se nahi
+            const categoryTitle = getSelectedCategoryTitle();
+
+            if (categoryTitle === "makeup" && formData.colors.length > 0) {
+                const colorsToSend = formData.colors.map((c) => ({
                     name: c.name,
                     hex: c.hex,
                     stock: parseInt(c.stock || "0"),
-                    price: parseFloat(String(c.price) || formData.price), // ✅ use variant price or fallback
+                    price: parseFloat(String(c.price) || formData.price),
                 }));
                 data.append("colors", JSON.stringify(colorsToSend));
             }
 
             if (formData.litres.length > 0) {
-                const litresToSend = formData.litres.map(l => ({
+                const litresToSend = formData.litres.map((l) => ({
                     amount: l.amount,
                     stock: parseInt(l.stock || "0"),
-                    price: parseFloat(String(l.price) || formData.price), // ✅ use variant price
+                    price: parseFloat(String(l.price) || formData.price),
                 }));
                 data.append("litres", JSON.stringify(litresToSend));
-            }
-            else {
+            } else {
                 data.append("stock", formData.stock);
             }
-
 
             await axios.post("https://backendskinmuse.vercel.app/api/products", data, {
                 headers: { "Content-Type": "multipart/form-data" },
@@ -123,23 +167,14 @@ export default function ProductUploadForm() {
 
             toast.success("✅ Product uploaded successfully!");
 
-            // Reset form
             setFormData({
-                name: "",
-                description: "",
-                price: "",
-                category: "",
-                brandId: "",
-                stock: "",
-                skinTypes: [],
-                discount: "",
-                ingredients: "",
-                productType: "",
-                colors: [],
-                litres: [],
+                name: "", description: "", price: "", category: "",
+                subCategoryId: "", brandId: "", stock: "", skinTypes: [],
+                discount: "", ingredients: "", productType: "", colors: [], litres: [],
             });
             setImages([]);
             setPreviews([]);
+            setSubCategories([]);
 
         } catch (err: any) {
             console.error(err);
@@ -149,6 +184,9 @@ export default function ProductUploadForm() {
         }
     };
 
+    // ✅ Render mein use karne ke liye title nikalo
+    const categoryTitle = getSelectedCategoryTitle();
+
     return (
         <div className="max-w-2xl mx-auto mt-10">
             <Card>
@@ -157,6 +195,7 @@ export default function ProductUploadForm() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
+
                         {/* Product Name */}
                         <div>
                             <Label>Product Name</Label>
@@ -185,59 +224,101 @@ export default function ProductUploadForm() {
                             </div>
                         </div>
 
-                        {/* Category & Skin Type */}
+                        {/* ✅ Category + Subcategory side by side */}
                         <div className="grid grid-cols-2 gap-4">
+
+                            {/* ✅ Main Category — API se top-level only */}
                             <div>
                                 <Label>Category</Label>
-                                <Select onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                                <Select
+                                    value={formData.category}
+                                    onValueChange={handleCategoryChange}
+                                >
                                     <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
                                     <SelectContent className="bg-background text-foreground">
-                                        {categories.map((cat) => <SelectItem className="data-[highlighted]:bg-foreground" key={cat} value={cat}>{cat}</SelectItem>)}
+                                        {mainCategories.map((cat) => (
+                                            <SelectItem
+                                                className="data-[highlighted]:bg-foreground"
+                                                key={cat._id}
+                                                value={cat._id}
+                                            >
+                                                {cat.title}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div>
-                                <Label>Skin Type</Label>
-                                <div className="flex flex-wrap gap-2 mt-1">
-                                    {skinTypesOptions.map((type) => (
-                                        <label key={type} className="flex items-center gap-1">
-                                            <input
-                                                type="checkbox"
-                                                value={type}
-                                                checked={formData.skinTypes.includes(type)}
-                                                onChange={(e) => {
-                                                    const { checked, value } = e.target;
-                                                    setFormData((prev) => ({
-                                                        ...prev,
-                                                        skinTypes: checked
-                                                            ? [...prev.skinTypes, value]
-                                                            : prev.skinTypes.filter((t) => t !== value),
-                                                    }));
-                                                }}
-                                            />
-                                            <span>{type}</span>
-                                        </label>
-                                    ))}
+
+                            {/* ✅ SubCategory — only shows when subcategories exist */}
+                            {subCategories.length > 0 && (
+                                <div>
+                                    <Label>Sub Category</Label>
+                                    <Select
+                                        value={formData.subCategoryId}
+                                        onValueChange={(value) =>
+                                            setFormData({ ...formData, subCategoryId: value })
+                                        }
+                                    >
+                                        <SelectTrigger><SelectValue placeholder="Select Sub Category" /></SelectTrigger>
+                                        <SelectContent
+                                            className="bg-white dark:bg-gray-900 text-black dark:text-white border shadow-lg z-[9999]"
+                                            position="popper"
+                                        >
+                                            {subCategories.map((sub) => (
+                                                <SelectItem
+                                                    key={sub._id}
+                                                    value={sub._id}
+                                                    className="data-[highlighted]:bg-gray-800 dark:data-[highlighted]:bg-gray-800"
+                                                >
+                                                    {sub.title}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
+                            )}
+                        </div>
+
+                        {/* Skin Type */}
+                        <div>
+                            <Label>Skin Type</Label>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                                {skinTypesOptions.map((type) => (
+                                    <label key={type} className="flex items-center gap-1">
+                                        <input
+                                            type="checkbox"
+                                            value={type}
+                                            checked={formData.skinTypes.includes(type)}
+                                            onChange={(e) => {
+                                                const { checked, value } = e.target;
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    skinTypes: checked
+                                                        ? [...prev.skinTypes, value]
+                                                        : prev.skinTypes.filter((t) => t !== value),
+                                                }));
+                                            }}
+                                        />
+                                        <span>{type}</span>
+                                    </label>
+                                ))}
                             </div>
                         </div>
 
-                        {/* Optional Litre Variant */}
-                        {["skincare", "haircare", "bath&body", "makeup"].includes(formData.category) && (
+                        {/* ✅ ml Variants — category select hone ke baad show ho (sab categories pe) */}
+                        {formData.category && (
                             <div className="mb-4">
                                 <label className="flex items-center gap-2">
                                     <input
                                         type="checkbox"
                                         checked={formData.litres.length > 0}
                                         onChange={(e) => {
-                                            if (e.target.checked) {
-                                                setFormData({
-                                                    ...formData,
-                                                    litres: formData.litres.length ? formData.litres : [{ amount: "", stock: "0", price: 0 }],
-                                                });
-                                            } else {
-                                                setFormData({ ...formData, litres: [] });
-                                            }
+                                            setFormData({
+                                                ...formData,
+                                                litres: e.target.checked
+                                                    ? (formData.litres.length ? formData.litres : [{ amount: "", stock: "0", price: 0 }])
+                                                    : [],
+                                            });
                                         }}
                                     />
                                     <span>Add ml Variants (Optional)</span>
@@ -251,152 +332,86 @@ export default function ProductUploadForm() {
                                 <div className="space-y-2">
                                     {formData.litres.map((litre, idx) => (
                                         <div key={idx} className="flex gap-2 items-center">
-                                            <Input
-                                                placeholder="ml (e.g., 0.5, 1)"
-                                                value={litre.amount}
+                                            <Input placeholder="ml (e.g., 0.5, 1)" value={litre.amount}
                                                 onChange={(e) => {
                                                     const newLitres = [...formData.litres];
                                                     newLitres[idx].amount = e.target.value;
                                                     setFormData({ ...formData, litres: newLitres });
-                                                }}
-                                                className="w-24"
-                                            />
-                                            <Input
-                                                type="number"
-                                                placeholder="Stock"
-                                                value={litre.stock}
+                                                }} className="w-24" />
+                                            <Input type="number" placeholder="Stock" value={litre.stock}
                                                 onChange={(e) => {
                                                     const newLitres = [...formData.litres];
                                                     newLitres[idx].stock = e.target.value;
                                                     setFormData({ ...formData, litres: newLitres });
-                                                }}
-                                                className="w-20"
-                                            />
-                                            <Input
-                                                type="number"
-                                                placeholder="Price"
-                                                value={litre.price}
+                                                }} className="w-20" />
+                                            <Input type="number" placeholder="Price" value={litre.price}
                                                 onChange={(e) => {
                                                     const newLitres = [...formData.litres];
                                                     newLitres[idx].price = Number(e.target.value);
                                                     setFormData({ ...formData, litres: newLitres });
-                                                }}
-                                                className="w-20"
-                                            />
-
-                                            <Button
-                                                type="button"
-                                                variant="destructive"
-                                                size="sm"
+                                                }} className="w-20" />
+                                            <Button type="button" variant="destructive" size="sm"
                                                 className="bg-foreground text-background hover:bg-foreground"
-                                                onClick={() => {
-                                                    const newLitres = formData.litres.filter((_, i) => i !== idx);
-                                                    setFormData({ ...formData, litres: newLitres });
-                                                }}
-                                            >
+                                                onClick={() => setFormData({ ...formData, litres: formData.litres.filter((_, i) => i !== idx) })}>
                                                 Remove
                                             </Button>
                                         </div>
                                     ))}
-                                    <Button
-                                        type="button"
-                                        onClick={() =>
-                                            setFormData({
-                                                ...formData,
-                                                litres: [...formData.litres, { amount: "", stock: "0", price: 0 }],
-                                            })
-                                        }
-                                        className="bg-foreground text-background hover:bg-foreground"
-                                    >
+                                    <Button type="button"
+                                        onClick={() => setFormData({ ...formData, litres: [...formData.litres, { amount: "", stock: "0", price: 0 }] })}
+                                        className="bg-foreground text-background hover:bg-foreground">
                                         Add ml Variant
                                     </Button>
                                 </div>
                             </div>
                         )}
 
-
-                        {formData.category === "makeup" && (
+                        {/* ✅ Colors — categoryTitle === "makeup" check (title se, _id se nahi) */}
+                        {categoryTitle === "makeup" && (
                             <div>
                                 <Label>Colors & Stock</Label>
                                 <div className="space-y-2">
                                     {formData.colors.map((color, idx) => (
                                         <div key={idx} className="flex gap-2 items-center">
-                                            {/* Color Name */}
-                                            <Input
-                                                placeholder="Color Name"
-                                                value={color.name}
+                                            <Input placeholder="Color Name" value={color.name}
                                                 onChange={(e) => {
                                                     const newColors = [...formData.colors];
                                                     newColors[idx].name = e.target.value;
                                                     setFormData({ ...formData, colors: newColors });
-                                                }}
-                                                className="flex-1"
-                                            />
-                                            {/* Color Picker */}
-                                            <Input
-                                                type="color"
-                                                value={color.hex}
+                                                }} className="flex-1" />
+                                            <Input type="color" value={color.hex}
                                                 onChange={(e) => {
                                                     const newColors = [...formData.colors];
                                                     newColors[idx].hex = e.target.value;
                                                     setFormData({ ...formData, colors: newColors });
-                                                }}
-                                                className="w-12 h-8 p-0"
-                                            />
-                                            {/* Stock */}
-                                            <Input
-                                                type="number"
-                                                placeholder="Stock"
-                                                value={color.stock}
+                                                }} className="w-12 h-8 p-0" />
+                                            <Input type="number" placeholder="Stock" value={color.stock}
                                                 onChange={(e) => {
                                                     const newColors = [...formData.colors];
                                                     newColors[idx].stock = e.target.value;
                                                     setFormData({ ...formData, colors: newColors });
-                                                }}
-                                                className="w-20"
-                                            />
-                                            <Input
-                                                type="number"
-                                                placeholder="Price"
-                                                value={color.price}
-                                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                                }} className="w-20" />
+                                            <Input type="number" placeholder="Price" value={color.price}
+                                                onChange={(e) => {
                                                     const newColors = [...formData.colors];
                                                     newColors[idx].price = Number(e.target.value);
                                                     setFormData({ ...formData, colors: newColors });
-                                                }}
-                                                className="w-20"
-                                            />
-
-                                            <Button
-                                                type="button"
-                                                variant="destructive"
-                                                size="sm"
+                                                }} className="w-20" />
+                                            <Button type="button" variant="destructive" size="sm"
                                                 className="bg-foreground text-background hover:bg-foreground"
-                                                onClick={() => {
-                                                    const newColors = formData.colors.filter((_, i) => i !== idx);
-                                                    setFormData({ ...formData, colors: newColors });
-                                                }}
-                                            >
+                                                onClick={() => setFormData({ ...formData, colors: formData.colors.filter((_, i) => i !== idx) })}>
                                                 Remove
                                             </Button>
                                         </div>
                                     ))}
-                                    <Button
-                                        type="button"
-                                        onClick={() =>
-                                            setFormData({
-                                                ...formData,
-                                                colors: [...formData.colors, { name: "", hex: "#000000", stock: "0", price: 0 }],
-                                            })
-                                        }
-                                        className="bg-foreground text-background hover:bg-foreground"
-                                    >
+                                    <Button type="button"
+                                        onClick={() => setFormData({ ...formData, colors: [...formData.colors, { name: "", hex: "#000000", stock: "0", price: 0 }] })}
+                                        className="bg-foreground text-background hover:bg-foreground">
                                         Add Color
                                     </Button>
                                 </div>
                             </div>
                         )}
-
 
                         {/* Brand */}
                         <div>
@@ -416,49 +431,30 @@ export default function ProductUploadForm() {
                         {/* Ingredients */}
                         <div>
                             <Label>Ingredients (one per line)</Label>
-                            <Textarea
-                                name="ingredients"
-                                value={formData.ingredients}
-                                onChange={handleChange}
-                                placeholder="Enter one ingredient per line"
-                                rows={4}
-                            />
+                            <Textarea name="ingredients" value={formData.ingredients} onChange={handleChange}
+                                placeholder="Enter one ingredient per line" rows={4} />
                         </div>
 
-
-                        {/* Multi Image Upload */}
+                        {/* Images */}
                         <div>
                             <Label>Product Images</Label>
-                            <Input
-                                type="file"
-                                accept="image/*"
-                                multiple
-                                onChange={(e) => setImages(Array.from(e.target.files || []))}
-                                required
-                            />
+                            <Input type="file" accept="image/*" multiple
+                                onChange={(e) => setImages(Array.from(e.target.files || []))} required />
                             <div className="mt-2 flex flex-wrap gap-2">
                                 {previews.map((url, idx) => (
                                     <div key={idx} className="relative h-24 w-24 border rounded overflow-hidden">
-                                        <img
-                                            src={url}
-                                            alt={`Preview ${idx + 1}`}
-                                            className="h-full w-full object-contain"
-                                        />
-                                        {/* ✅ Remove badge */}
-                                        <button
-                                            type="button"
+                                        <img src={url} alt={`Preview ${idx + 1}`} className="h-full w-full object-contain" />
+                                        <button type="button"
                                             onClick={() => {
-                                                setImages((prevImages) => prevImages.filter((_, i) => i !== idx));
-                                                setPreviews((prevPreviews) => prevPreviews.filter((_, i) => i !== idx));
+                                                setImages((prev) => prev.filter((_, i) => i !== idx));
+                                                setPreviews((prev) => prev.filter((_, i) => i !== idx));
                                             }}
-                                            className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-700"
-                                        >
+                                            className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-700">
                                             ×
                                         </button>
                                     </div>
                                 ))}
                             </div>
-
                         </div>
 
                         <Button className="bg-foreground text-background hover:bg-foreground w-full" type="submit" disabled={loading}>
