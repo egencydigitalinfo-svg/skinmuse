@@ -30,7 +30,7 @@ export default function CategoryUploadForm() {
         const fetchCategories = async () => {
             try {
                 const res = await axios.get(
-                    "https://backendskinmuse.vercel.app/api/category"
+                    "https://skinmusebackend-delta.vercel.app/api/category"
                 );
 
                 // ✅ Only show categories where parent_id is null (top-level/main categories)
@@ -90,7 +90,7 @@ export default function CategoryUploadForm() {
                 "";
 
             await axios.post(
-                "https://backendskinmuse.vercel.app/api/category",
+                "https://skinmusebackend-delta.vercel.app/api/category",
                 data,
                 {
                     headers: {
@@ -110,7 +110,7 @@ export default function CategoryUploadForm() {
             // console.log("FormData parent_id:", data.get("parent_id"));
             // ✅ Refresh parent list so new top-level categories appear instantly
             const res = await axios.get(
-                "https://backendskinmuse.vercel.app/api/category"
+                "https://skinmusebackend-delta.vercel.app/api/category"
             );
             const topLevelOnly = res.data.filter(
                 (cat: any) => cat.parent_id === null || cat.parent_id === undefined

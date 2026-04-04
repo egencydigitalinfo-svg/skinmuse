@@ -587,7 +587,7 @@ export default function EditProductForm() {
   useEffect(() => {
     const fetchBrands = async () => {
       try {
-        const res = await axios.get("https://backendskinmuse.vercel.app/api/brands");
+        const res = await axios.get("https://skinmusebackend-delta.vercel.app/api/brands");
         if (Array.isArray(res.data)) setBrands(res.data);
         else if (res.data?.brands && Array.isArray(res.data.brands)) setBrands(res.data.brands);
       } catch {
@@ -601,7 +601,7 @@ export default function EditProductForm() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await axios.get("https://backendskinmuse.vercel.app/api/category");
+        const res = await axios.get("https://skinmusebackend-delta.vercel.app/api/category");
         const all = res.data;
         setAllCategories(all);
         const topLevel = all.filter(
@@ -622,7 +622,7 @@ export default function EditProductForm() {
     const fetchProduct = async () => {
       try {
         setLoadingData(true);
-        const res = await axios.get(`https://backendskinmuse.vercel.app/api/products/${productId}`);
+        const res = await axios.get(`https://skinmusebackend-delta.vercel.app/api/products/${productId}`);
         const product = res.data;
 
         // ✅ Resolve category _id — product.category could be _id string or object
@@ -763,7 +763,7 @@ export default function EditProductForm() {
       data.append("isHotSale", formData.isHotSale ? "true" : "false");
       data.append("isFeatured", formData.isFeatured ? "true" : "false");
 
-      await axios.put(`https://backendskinmuse.vercel.app/api/products/${productId}`, data, {
+      await axios.put(`https://skinmusebackend-delta.vercel.app/api/products/${productId}`, data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

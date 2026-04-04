@@ -56,7 +56,7 @@ export default function ProductUploadForm() {
     useEffect(() => {
         const fetchBrands = async () => {
             try {
-                const res = await axios.get("https://backendskinmuse.vercel.app/api/brands");
+                const res = await axios.get("https://skinmusebackend-delta.vercel.app/api/brands");
                 if (Array.isArray(res.data)) setBrands(res.data);
                 else if (res.data?.brands) setBrands(res.data.brands);
                 else setBrands([]);
@@ -71,7 +71,7 @@ export default function ProductUploadForm() {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const res = await axios.get("https://backendskinmuse.vercel.app/api/category");
+                const res = await axios.get("https://skinmusebackend-delta.vercel.app/api/category");
                 const all = res.data;
                 setAllCategories(all);
 
@@ -161,7 +161,7 @@ export default function ProductUploadForm() {
                 data.append("stock", formData.stock);
             }
 
-            await axios.post("https://backendskinmuse.vercel.app/api/products", data, {
+            await axios.post("https://skinmusebackend-delta.vercel.app/api/products", data, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 

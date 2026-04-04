@@ -33,10 +33,10 @@ const BlogDetail: React.FC = () => {
     const fetchBlog = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`https://backendskinmuse.vercel.app/api/blogs/${id}`);
+        const res = await axios.get(`https://skinmusebackend-delta.vercel.app/api/blogs/${id}`);
         setBlog(res.data.blog);
 
-        const allRes = await axios.get(`https://backendskinmuse.vercel.app/api/blogs`);
+        const allRes = await axios.get(`https://skinmusebackend-delta.vercel.app/api/blogs`);
         setRelatedBlogs(allRes.data.blogs || []);
       } catch (err: any) {
         setError(err.response?.data?.error || 'Failed to load blog');

@@ -21,7 +21,7 @@ const AdminCategories: React.FC = () => {
   const fetchCategories = async () => {
     try {
       setPreLoading(true);
-      const res = await axios.get("https://backendskinmuse.vercel.app/api/category");
+      const res = await axios.get("https://skinmusebackend-delta.vercel.app/api/category");
       const catList = Array.isArray(res.data) ? res.data : [];
       const sorted = catList.sort((a: Cat, b: Cat) => a.title.localeCompare(b.title));
       setCategories(sorted);
@@ -45,7 +45,7 @@ const AdminCategories: React.FC = () => {
         localStorage.getItem("skinmuse_admin_token") ||
         localStorage.getItem("skinmuse_superadmin_token") ||
         "";
-      await axios.delete(`https://backendskinmuse.vercel.app/api/category/${id}`, {
+      await axios.delete(`https://skinmusebackend-delta.vercel.app/api/category/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success("Category deleted successfully");

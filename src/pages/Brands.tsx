@@ -5,7 +5,7 @@ import { ProductCategory } from '@/types/product';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://backendskinmuse.vercel.app/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://skinmusebackend-delta.vercel.app/api';
 
 const Brands = () => {
   const [searchParams] = useSearchParams();

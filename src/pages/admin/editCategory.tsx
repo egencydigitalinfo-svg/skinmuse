@@ -35,7 +35,7 @@ export default function EditCategoryForm() {
     const fetchCategories = async () => {
       try {
         const res = await axios.get(
-          "https://backendskinmuse.vercel.app/api/category"
+          "https://skinmusebackend-delta.vercel.app/api/category"
         );
         setParentCategories(res.data);
       } catch (err) {
@@ -56,7 +56,7 @@ export default function EditCategoryForm() {
           localStorage.getItem("skinmuse_superadmin_token") ||
           "";
         const { data } = await axios.get(
-          `https://backendskinmuse.vercel.app/api/category/${categoryId}`,
+          `https://skinmusebackend-delta.vercel.app/api/category/${categoryId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -117,7 +117,7 @@ export default function EditCategoryForm() {
         "";
 
       await axios.put(
-        `https://backendskinmuse.vercel.app/api/category/${categoryId}`,
+        `https://skinmusebackend-delta.vercel.app/api/category/${categoryId}`,
         data,
         {
           headers: {

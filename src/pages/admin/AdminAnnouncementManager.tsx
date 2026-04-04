@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Trash2, Edit3, Plus } from "lucide-react";
 import { toast } from "sonner"; // if you use toast lib, else replace with alert
 
-const API_URL = import.meta.env.VITE_API_URL || "https://backendskinmuse.vercel.app";
+const API_URL = import.meta.env.VITE_API_URL || "https://skinmusebackend-delta.vercel.app";
 
 const AdminAnnouncementManager = () => {
   const [announcements, setAnnouncements] = useState([]);

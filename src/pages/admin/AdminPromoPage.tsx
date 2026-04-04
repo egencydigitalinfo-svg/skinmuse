@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 
-const API_BASE = "https://backendskinmuse.vercel.app/api";
+const API_BASE = "https://skinmusebackend-delta.vercel.app/api";
 
 const AdminPromoAndMinOrder = () => {
   const [promoCodes, setPromoCodes] = useState<any[]>([]);

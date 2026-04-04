@@ -9,7 +9,7 @@ import { X, XCircle, Filter, Search, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://backendskinmuse.vercel.app/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://skinmusebackend-delta.vercel.app/api';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 

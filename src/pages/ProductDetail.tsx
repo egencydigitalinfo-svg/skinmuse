@@ -18,7 +18,7 @@ import "swiper/css";
 import "swiper/css/pagination";
 
 
-const API_BASE = "https://backendskinmuse.vercel.app/api";
+const API_BASE = "https://skinmusebackend-delta.vercel.app/api";
 
 const ProductDetail = () => {
   const { id } = useParams();

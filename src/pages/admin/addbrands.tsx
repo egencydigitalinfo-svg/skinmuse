@@ -47,7 +47,7 @@ export default function BrandUploadForm() {
       if (logo) data.append("logo", logo);
       if (featuredImage) data.append("featuredImage", featuredImage);
 
-      await axios.post("https://backendskinmuse.vercel.app/api/brands", data, {
+      await axios.post("https://skinmusebackend-delta.vercel.app/api/brands", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

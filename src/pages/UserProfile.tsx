@@ -21,7 +21,7 @@ const Profile = () => {
 
     try {
       const res = await axios.get(
-        "https://backendskinmuse.vercel.app/api/orders/myorders",
+        "https://skinmusebackend-delta.vercel.app/api/orders/myorders",
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("skinmuse_token") || ""

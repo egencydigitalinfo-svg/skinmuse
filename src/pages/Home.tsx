@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { Cat } from '@/types/category';
 import { skinType } from '@/types/skintype';
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://backendskinmuse.vercel.app/api";
+const API_BASE = import.meta.env.VITE_API_URL || "https://skinmusebackend-delta.vercel.app/api";
 
 
 
@@ -110,7 +110,7 @@ const Home = () => {
   useEffect(() => {
     const fetchHeroBanners = async () => {
       try {
-        const res = await fetch("https://backendskinmuse.vercel.app/api/hero-banners");
+        const res = await fetch("https://skinmusebackend-delta.vercel.app/api/hero-banners");
         const data = await res.json();
         setHeroBanners(data || []);
       } catch (err) {
@@ -127,7 +127,7 @@ const Home = () => {
   useEffect(() => {
     const fetchBanners = async () => {
       try {
-        const res = await fetch("https://backendskinmuse.vercel.app/api/banners");
+        const res = await fetch("https://skinmusebackend-delta.vercel.app/api/banners");
         const data = await res.json();
         setBanner(data || []);
       } catch (err) {
@@ -143,7 +143,7 @@ const Home = () => {
 
   const [categories, setCategories] = useState<Cat[]>([]);
   useEffect(() => {
-    axios.get("https://backendskinmuse.vercel.app/api/category")
+    axios.get("https://skinmusebackend-delta.vercel.app/api/category")
       .then((res) => setCategories(res.data || []))
       .catch(() => toast.error("Failed to load categories"));
   }, []);
@@ -153,7 +153,7 @@ const Home = () => {
   useEffect(() => {
     const fetchSkinTypes = async () => {
       try {
-        const res = await fetch(`https://backendskinmuse.vercel.app/api/skinType`);
+        const res = await fetch(`https://skinmusebackend-delta.vercel.app/api/skinType`);
         const data = await res.json();
         setSkinTypes(data);
       } catch (error) {

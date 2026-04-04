@@ -32,9 +32,9 @@ export default function Dashboard() {
       const headers = { Authorization: `Bearer ${token}` };
 
       const [prodRes, userRes, orderRes] = await Promise.all([
-        axios.get("https://backendskinmuse.vercel.app/api/products", { headers }),
-        axios.get("https://backendskinmuse.vercel.app/api/auth/users", { headers }),
-        axios.get("https://backendskinmuse.vercel.app/api/orders", { headers }),
+        axios.get("https://skinmusebackend-delta.vercel.app/api/products", { headers }),
+        axios.get("https://skinmusebackend-delta.vercel.app/api/auth/users", { headers }),
+        axios.get("https://skinmusebackend-delta.vercel.app/api/orders", { headers }),
       ]);
 
       const productList = Array.isArray(prodRes.data.products)

@@ -27,8 +27,8 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const API_URL = "https://backendskinmuse.vercel.app/api/auth";
+// https://backendskinmuse.vercel.app/api/auth
+const API_URL = "https://skinmusebackend-delta.vercel.app/api/auth";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);

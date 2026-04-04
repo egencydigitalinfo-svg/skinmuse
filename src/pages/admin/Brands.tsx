@@ -18,7 +18,7 @@ const AdminBrands: React.FC = () => {
   const [preLoading, setPreLoading] = useState(true);
   const navigate = useNavigate();
 
-  const API_BASE = "https://backendskinmuse.vercel.app/api";
+  const API_BASE = "https://skinmusebackend-delta.vercel.app/api";
 
   // === Fetch Brands ===
   const fetchBrands = async () => {

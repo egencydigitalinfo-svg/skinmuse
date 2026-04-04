@@ -15,7 +15,7 @@ const Contact = () => {
 
     try {
       setStatus("Sending...");
-      const res = await fetch("https://backendskinmuse.vercel.app/api/contact", {
+      const res = await fetch("https://skinmusebackend-delta.vercel.app/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

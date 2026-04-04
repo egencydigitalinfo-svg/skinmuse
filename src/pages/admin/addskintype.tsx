@@ -68,7 +68,7 @@ export default function SkinTypeUploadForm() {
                 localStorage.getItem("skinmuse_superadmin_token") ||
                 "";
 
-            await axios.post("https://backendskinmuse.vercel.app/api/skinType", data, {
+            await axios.post("https://skinmusebackend-delta.vercel.app/api/skinType", data, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                     Authorization: `Bearer ${token}`, // 👈 your user’s JWT token
