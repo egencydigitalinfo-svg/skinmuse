@@ -30,7 +30,7 @@ export default function ReviewsPage() {
     review: "",
   });
 
-  const BACKEND_URL = "https://backendskinmuse.vercel.app";
+  const BACKEND_URL = "https://skinmusebackend-delta.vercel.app";
 
   useEffect(() => {
     async function fetchProducts() {

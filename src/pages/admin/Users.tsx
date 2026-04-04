@@ -34,7 +34,7 @@ const Users: React.FC = () => {
   const [loading, setLoading] = useState<string | null>(null);
 
   const { toast } = useToast();
-  const API_BASE = "https://backendskinmuse.vercel.app/api/auth";
+  const API_BASE = "https://skinmusebackend-delta.vercel.app/api/auth";
 
   const fetchData = async () => {
     try {

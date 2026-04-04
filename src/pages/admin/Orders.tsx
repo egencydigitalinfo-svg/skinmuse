@@ -46,7 +46,7 @@ export default function OrdersPage() {
         "";
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      const res = await axios.get("https://backendskinmuse.vercel.app/api/orders", { headers });
+      const res = await axios.get("https://skinmusebackend-delta.vercel.app/api/orders", { headers });
       setOrders(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error(err);
@@ -72,7 +72,7 @@ export default function OrdersPage() {
         "";
 
       await axios.put(
-        `https://backendskinmuse.vercel.app/api/orders/${id}`,
+        `https://skinmusebackend-delta.vercel.app/api/orders/${id}`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -105,7 +105,7 @@ export default function OrdersPage() {
         localStorage.getItem("skinmuse_admin_token") ||
         localStorage.getItem("skinmuse_superadmin_token") ||
         "";
-      await axios.delete(`https://backendskinmuse.vercel.app/api/orders/${id}`, {
+      await axios.delete(`https://skinmusebackend-delta.vercel.app/api/orders/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setOrders((prev) => prev.filter((o) => o._id !== id));

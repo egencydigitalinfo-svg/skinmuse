@@ -29,8 +29,8 @@ const AdminProducts: React.FC = () => {
       setPreLoading(true);
 
       const [productsRes, brandsRes] = await Promise.all([
-        axios.get("https://backendskinmuse.vercel.app/api/products"),
-        axios.get("https://backendskinmuse.vercel.app/api/brands"),
+        axios.get("https://skinmusebackend-delta.vercel.app/api/products"),
+        axios.get("https://skinmusebackend-delta.vercel.app/api/brands"),
       ]);
 
       const productList: Product[] = Array.isArray(productsRes.data)
@@ -101,7 +101,7 @@ const AdminProducts: React.FC = () => {
         localStorage.getItem("skinmuse_admin_token") ||
         localStorage.getItem("skinmuse_superadmin_token") ||
         "";
-      await axios.delete(`https://backendskinmuse.vercel.app/api/products/${id}`, {
+      await axios.delete(`https://skinmusebackend-delta.vercel.app/api/products/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast({ title: "Deleted!", description: "Product deleted successfully" });

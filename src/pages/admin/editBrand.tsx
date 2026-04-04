@@ -61,7 +61,7 @@ export default function EditBrandForm() {
     const fetchBrand = async () => {
       try {
         setLoadingData(true);
-        const res = await axios.get(`https://backendskinmuse.vercel.app/api/brands/${brandId}`);
+        const res = await axios.get(`https://skinmusebackend-delta.vercel.app/api/brands/${brandId}`);
         const brand = res.data.brand || res.data;
 
         setFormData({
@@ -104,7 +104,7 @@ export default function EditBrandForm() {
       if (logo) data.append("logo", logo);
       if (featuredImage) data.append("featuredImage", featuredImage);
 
-      await axios.put(`https://backendskinmuse.vercel.app/api/brands/${brandId}`, data, {
+      await axios.put(`https://skinmusebackend-delta.vercel.app/api/brands/${brandId}`, data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

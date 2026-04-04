@@ -22,7 +22,7 @@ const SkinTypes: React.FC = () => {
   const fetchSkinTypes = async () => {
     try {
       setPreLoading(true);
-      const res = await axios.get("https://backendskinmuse.vercel.app/api/skinType");
+      const res = await axios.get("https://skinmusebackend-delta.vercel.app/api/skinType");
       const catList = Array.isArray(res.data)
         ? res.data
         : [];
@@ -50,7 +50,7 @@ const SkinTypes: React.FC = () => {
         localStorage.getItem("skinmuse_admin_token") ||
         localStorage.getItem("skinmuse_superadmin_token") ||
         "";
-      await axios.delete(`https://backendskinmuse.vercel.app/api/skinType/${id}`, {
+      await axios.delete(`https://skinmusebackend-delta.vercel.app/api/skinType/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success("SkinType deleted successfully");

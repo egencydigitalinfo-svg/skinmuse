@@ -32,7 +32,7 @@ export default function SkinTypeEditForm() {
   useEffect(() => {
     const fetchSkinType = async () => {
       try {
-        const res = await axios.get(`https://backendskinmuse.vercel.app/api/skinType`);
+        const res = await axios.get(`https://skinmusebackend-delta.vercel.app/api/skinType`);
         const found = res.data.find((item: any) => item._id === skinTypeId);
         if (found) {
           setFormData({
@@ -85,7 +85,7 @@ export default function SkinTypeEditForm() {
         localStorage.getItem("skinmuse_superadmin_token") ||
         "";
 
-      await axios.put(`https://backendskinmuse.vercel.app/api/skinType/${skinTypeId}`, data, {
+      await axios.put(`https://skinmusebackend-delta.vercel.app/api/skinType/${skinTypeId}`, data, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,

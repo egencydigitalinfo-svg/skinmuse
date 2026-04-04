@@ -50,7 +50,7 @@ const BlogsForAdmin: React.FC = () => {
 
   const fetchBlogs = async () => {
     try {
-      const res = await axios.get("https://backendskinmuse.vercel.app/api/blogs");
+      const res = await axios.get("https://skinmusebackend-delta.vercel.app/api/blogs");
       setBlogs(res.data.blogs || []);
     } catch (err) {
       console.error("Error fetching blogs:", err);
@@ -109,7 +109,7 @@ const BlogsForAdmin: React.FC = () => {
   const handleAddBlog = async (formData: FormData) => {
     try {
       const res = await axios.post(
-        "https://backendskinmuse.vercel.app/api/blogs",
+        "https://skinmusebackend-delta.vercel.app/api/blogs",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -130,7 +130,7 @@ const BlogsForAdmin: React.FC = () => {
         localStorage.getItem("skinmuse_admin_token") ||
         localStorage.getItem("skinmuse_superadmin_token") ||
         "";
-      await axios.delete(`https://backendskinmuse.vercel.app/api/blogs/${id}`, {
+      await axios.delete(`https://skinmusebackend-delta.vercel.app/api/blogs/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast({ title: "Deleted!", description: "Blog deleted successfully" });
@@ -154,7 +154,7 @@ const BlogsForAdmin: React.FC = () => {
         "";
 
       const res = await axios.put(
-        `https://backendskinmuse.vercel.app/api/blogs/${id}`,
+        `https://skinmusebackend-delta.vercel.app/api/blogs/${id}`,
         formData,
         {
           headers: {

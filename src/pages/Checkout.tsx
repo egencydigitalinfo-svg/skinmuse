@@ -51,7 +51,7 @@ const Checkout = () => {
   useEffect(() => {
     const fetchMinOrder = async () => {
       try {
-        const res = await fetch("https://backendskinmuse.vercel.app/api/minorder");
+        const res = await fetch("https://skinmusebackend-delta.vercel.app/api/minorder");
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) setMinOrder(data[0].price);
       } catch (error) {
@@ -65,7 +65,7 @@ const Checkout = () => {
   useEffect(() => {
     const fetchShipping = async () => {
       try {
-        const res = await fetch("https://backendskinmuse.vercel.app/api/shipping");
+        const res = await fetch("https://skinmusebackend-delta.vercel.app/api/shipping");
         const data = await res.json();
 
         if (data && data.shippingPrice != null) {
@@ -91,7 +91,7 @@ const Checkout = () => {
 
     try {
       setLoading(true);
-      const res = await fetch(`https://backendskinmuse.vercel.app/api/promocodes/verify/${promoCode}`);
+      const res = await fetch(`https://skinmusebackend-delta.vercel.app/api/promocodes/verify/${promoCode}`);
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.message || "Invalid promo code");
@@ -194,7 +194,7 @@ const Checkout = () => {
         form.append("paymentScreenshot", formData.easypaisaScreenshot);
       }
 
-      const response = await fetch("https://backendskinmuse.vercel.app/api/orders", {
+      const response = await fetch("https://skinmusebackend-delta.vercel.app/api/orders", {
         method: "POST",
         body: form, // no JSON headers — browser will handle boundary
       });

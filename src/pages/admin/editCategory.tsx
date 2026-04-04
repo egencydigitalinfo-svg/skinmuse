@@ -17,20 +17,38 @@ import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 
 export default function EditCategoryForm() {
+  const { categoryId } = useParams<{ categoryId: string }>();
   const [formData, setFormData] = useState({
     name: "",
     category: "",
+    parent_id: "none",
   });
   const [bgImage, setBgImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [existingImage, setExistingImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { categoryId } = useParams();
+  const [parentCategories, setParentCategories] = useState<any[]>([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  const categories = ["makeup", "skincare", "haircare", "bath&body"];
+  // ✅ Fetch parent categories FIRST
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await axios.get(
+          "https://skinmusebackend-delta.vercel.app/api/category"
+        );
+        setParentCategories(res.data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchCategories();
+  }, []);
 
+  // ✅ Fetch category details
   useEffect(() => {
     const fetchCategory = async () => {
+      if (!categoryId) return;
       try {
         setLoading(true);
         const token =
@@ -38,22 +56,30 @@ export default function EditCategoryForm() {
           localStorage.getItem("skinmuse_superadmin_token") ||
           "";
         const { data } = await axios.get(
-          `https://backendskinmuse.vercel.app/api/category/${categoryId}`,
+          `https://skinmusebackend-delta.vercel.app/api/category/${categoryId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        setFormData({ name: data.title, category: data.category });
-        setExistingImage(data.image);
-      } catch (error) {
-        console.error(error);
+
+        console.log("Fetched category data:", data); // 👈 Check console to see exact field names
+
+        setFormData({
+          name: data.title || data.name || "",         // ✅ handle both field names
+          category: data.category || "",
+          parent_id: data.parent_id || "none",          // ✅ fallback to "none" if null/undefined
+        });
+        setExistingImage(data.image || null);
+        setDataLoaded(true);
+      } catch (err) {
+        console.error(err);
         toast.error("Failed to load category details!");
       } finally {
         setLoading(false);
       }
     };
 
-    if (categoryId) fetchCategory();
+    fetchCategory();
   }, [categoryId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,18 +89,14 @@ export default function EditCategoryForm() {
   const handleBgImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setBgImage(file);
-    if (file) {
-      const previewUrl = URL.createObjectURL(file);
-      setPreviewUrl(previewUrl);
-    } else {
-      setPreviewUrl(null);
-    }
+    if (file) setPreviewUrl(URL.createObjectURL(file));
+    else setPreviewUrl(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.category) {
+    if (!formData.name) {
       toast.error("Please fill in all required fields!");
       return;
     }
@@ -82,10 +104,12 @@ export default function EditCategoryForm() {
     try {
       setLoading(true);
       const data = new FormData();
-      data.append("name", formData.name);
+      data.append("title", formData.name);
       data.append("category", formData.category);
-
-      if (bgImage) data.append("image", bgImage); // optional image update
+      if (formData.parent_id && formData.parent_id !== "none") {
+        data.append("parent_id", formData.parent_id);
+      }
+      if (bgImage) data.append("image", bgImage);
 
       const token =
         localStorage.getItem("skinmuse_admin_token") ||
@@ -93,7 +117,7 @@ export default function EditCategoryForm() {
         "";
 
       await axios.put(
-        `https://backendskinmuse.vercel.app/api/category/${categoryId}`,
+        `https://skinmusebackend-delta.vercel.app/api/category/${categoryId}`,
         data,
         {
           headers: {
@@ -114,6 +138,15 @@ export default function EditCategoryForm() {
     }
   };
 
+  // ✅ Don't render form until data is loaded to avoid Select defaultValue issue
+  if (loading && !dataLoaded) {
+    return (
+      <div className="max-w-2xl mx-auto mt-10 text-center text-muted-foreground">
+        Loading category...
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto mt-10">
       <Card>
@@ -122,42 +155,53 @@ export default function EditCategoryForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Name */}
+            {/* Title */}
             <div>
               <Label>Title</Label>
               <Input
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
+                placeholder="Enter category title"
                 required
               />
             </div>
 
-            {/* Category */}
-            <div>
-              <Label>Category</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, category: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Category" />
-                </SelectTrigger>
-                <SelectContent className="bg-background text-foreground">
-                  {categories.map((cat) => (
-                    <SelectItem
-                      key={cat}
-                      value={cat}
-                      className="data-[highlighted]:bg-foreground data-[highlighted]:text-background"
-                    >
-                      {cat}
+            {/* Parent Category */}
+            {dataLoaded && (  // ✅ Only render Select after data is loaded
+              <div>
+                <Label>Parent Category (Optional)</Label>
+                <Select
+                  key={formData.parent_id}  // ✅ Force re-render when value changes
+                  value={formData.parent_id}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, parent_id: value })
+                  }
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select Parent (Optional)" />
+                  </SelectTrigger>
+                  <SelectContent
+                    className="bg-white dark:bg-gray-900 text-black dark:text-white border shadow-lg z-[9999]"
+                    position="popper"
+                  >
+                    <SelectItem value="none">
+                      No Parent
                     </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                    {parentCategories
+                      .filter((cat) => cat._id !== categoryId) // ✅ Exclude self
+                      .map((cat) => (
+                        <SelectItem
+                          key={cat._id}
+                          value={cat._id}
+                        >
+                          {cat.title}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Current Image */}
             {existingImage && !previewUrl && (
@@ -167,9 +211,7 @@ export default function EditCategoryForm() {
                   <img
                     src={existingImage}
                     alt="Current category"
-                    width={400}
-                    height={250}
-                    className="rounded-md object-cover border"
+                    className="w-80 h-52 object-cover rounded-md border"
                   />
                 </div>
               </div>
@@ -178,17 +220,13 @@ export default function EditCategoryForm() {
             {/* Upload New Image */}
             <div>
               <Label>Replace Background Image (optional)</Label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={handleBgImageChange}
-              />
+              <Input type="file" accept="image/*" onChange={handleBgImageChange} />
               {previewUrl && (
                 <div className="mt-2 flex justify-center">
                   <img
                     src={previewUrl}
                     alt="Preview"
-                    className="w-full h-full object-cover border rounded-md"
+                    className="w-80 h-52 object-cover rounded-md border"
                   />
                 </div>
               )}

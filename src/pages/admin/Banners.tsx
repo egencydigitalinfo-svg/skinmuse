@@ -38,8 +38,8 @@ export default function BannerManager() {
 
   const baseURL =
     bannerType === "regular"
-      ? "https://backendskinmuse.vercel.app/api/banners"
-      : "https://backendskinmuse.vercel.app/api/hero-banners";
+      ? "https://skinmusebackend-delta.vercel.app/api/banners"
+      : "https://skinmusebackend-delta.vercel.app/api/hero-banners";
 
   // ✅ Fetch banners
   const fetchBanners = async () => {
