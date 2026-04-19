@@ -237,7 +237,7 @@ const Home = () => {
 const parentCategories = categories.filter(cat => !cat.parent_id);
   return (
     <div className="min-h-screen bg-background">
-      <section className="relative overflow-hidden text-white">
+      {/* <section className="relative overflow-hidden text-white">
         <Swiper
           modules={[Autoplay]}
           spaceBetween={0}
@@ -251,7 +251,9 @@ const parentCategories = categories.filter(cat => !cat.parent_id);
         >
           {heroBanners.map((banner) => (
             <SwiperSlide key={banner._id}>
-              <Link to={`/products?category=${banner.link}`}>
+              <Link 
+                to={`/products?category=${banner.link}`}
+              >
                 <div
                   className="relative w-full h-full bg-cover bg-center bg-no-repeat"
                   style={{ backgroundImage: `url(${banner.image})` }}
@@ -262,7 +264,41 @@ const parentCategories = categories.filter(cat => !cat.parent_id);
           ))}
 
         </Swiper>
-      </section>
+      </section> */}
+      <section className="relative overflow-hidden text-white">
+  <Swiper
+    modules={[Autoplay]}
+    spaceBetween={0}
+    slidesPerView={1}
+    loop={true}
+    autoplay={{
+      delay: 7000,
+      disableOnInteraction: false,
+    }}
+    className="w-full h-[70vh] sm:h-[75vh] md:h-[90vh] lg:h-[95vh]"
+  >
+    {heroBanners.map((banner) => {
+      // ✅ categories state se title match karke _id dhundo
+      const matchedCat = categories.find(
+        (cat) =>
+          cat._id === banner.link ||
+          cat.title?.toLowerCase() === banner.link?.toLowerCase()
+      );
+      const categoryId = matchedCat?._id || banner.link;
+
+      return (
+        <SwiperSlide key={banner._id}>
+          <Link to={`/products?category=${categoryId}`}>
+            <div
+              className="relative w-full h-full bg-cover bg-center bg-no-repeat"
+              style={{ backgroundImage: `url(${banner.image})` }}
+            />
+          </Link>
+        </SwiperSlide>
+      );
+    })}
+  </Swiper>
+</section>
 
 
       {/* === Featured Brands Section === */}
@@ -468,7 +504,8 @@ const parentCategories = categories.filter(cat => !cat.parent_id);
               {parentCategories.map((cat) => (
                 <SwiperSlide key={cat._id}>
                   <Link
-                    to={`/products?category=${encodeURIComponent(cat.category)}`}
+                    // to={`/products?category=${encodeURIComponent(cat.category)}`}
+                    to={`/products?category=${cat._id}`}
                     className="group relative border-foreground overflow-hidden rounded-lg aspect-[5/3] sm:aspect-[5/2] bg-card block"
                   >
                     <img

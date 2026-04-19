@@ -7,29 +7,32 @@ export interface ProductColor {
   stock: number;
 }
 
+// types/product.ts
 export interface Product {
   _id: string;
   name: string;
-  category: ProductCategory;
-  brandId: string;
   price: number;
-  images: [string];
+  discount: number;
   description: string;
-  skinTypes?: SkinType[];
-  ingredients?: string[];
-  isFeatured?: boolean;
-  isTrending?: boolean;
-  isHotSale?: boolean;
-  discount?: number;
-  stock?: number;
-  colors:ProductColor[];
-  litres:{
-    amount:string;
-    stock:number;
-  }[];
-  createdAt:string;
-  updatedAt:string;
-  
+  category: { _id: string; title: string } | null;
+  subcategory: { _id: string; title: string } | null;
+  productType: string;
+  images: string[];
+  brandId: string | null;
+  brand: { _id: string; name: string; logo?: string; discount?: number } | null;
+  brandName: string | null;
+  stock: number;
+  salesCount: number;
+  skinType: string[];
+  ingredients: string[];
+  litres: { amount: number; stock: number; price?: number }[];
+  colors: { name: string; hex: string; stock: number; price?: number }[];
+  isTrending: boolean;
+  isHotSale: boolean;
+  isFeatured: boolean;
+  reviews: any[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CartItem {
