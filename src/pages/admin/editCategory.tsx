@@ -30,16 +30,20 @@ export default function EditCategoryForm() {
   const [parentCategories, setParentCategories] = useState<any[]>([]);
   const [dataLoaded, setDataLoaded] = useState(false);
 
-  // ✅ Fetch parent categories FIRST
+  // ✅ Fetch sirf top-level (main) parent categories
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const res = await axios.get(
           "https://skinmusebackend-delta.vercel.app/api/category"
         );
-        setParentCategories(res.data);
+        const topLevelOnly = res.data.filter(
+          (cat: any) => cat.parent_id === null || cat.parent_id === undefined
+        );
+        setParentCategories(topLevelOnly);
       } catch (err) {
         console.error(err);
+        toast.error("Failed to load categories");
       }
     };
     fetchCategories();
@@ -62,12 +66,14 @@ export default function EditCategoryForm() {
           }
         );
 
-        console.log("Fetched category data:", data); // 👈 Check console to see exact field names
+        console.log("Fetched category data:", data);
+
+        const parentId = data.parent_id?._id || data.parent_id || "none";
 
         setFormData({
-          name: data.title || data.name || "",         // ✅ handle both field names
+          name: data.title || data.name || "",
           category: data.category || "",
-          parent_id: data.parent_id || "none",          // ✅ fallback to "none" if null/undefined
+          parent_id: parentId,
         });
         setExistingImage(data.image || null);
         setDataLoaded(true);
@@ -104,11 +110,17 @@ export default function EditCategoryForm() {
     try {
       setLoading(true);
       const data = new FormData();
+
+      // ✅ Dono field names append — backend jo bhi use kare
       data.append("title", formData.name);
+      data.append("name", formData.name);
+
       data.append("category", formData.category);
+
       if (formData.parent_id && formData.parent_id !== "none") {
         data.append("parent_id", formData.parent_id);
       }
+
       if (bgImage) data.append("image", bgImage);
 
       const token =
@@ -138,7 +150,6 @@ export default function EditCategoryForm() {
     }
   };
 
-  // ✅ Don't render form until data is loaded to avoid Select defaultValue issue
   if (loading && !dataLoaded) {
     return (
       <div className="max-w-2xl mx-auto mt-10 text-center text-muted-foreground">
@@ -155,6 +166,7 @@ export default function EditCategoryForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-5">
+
             {/* Title */}
             <div>
               <Label>Title</Label>
@@ -168,11 +180,11 @@ export default function EditCategoryForm() {
             </div>
 
             {/* Parent Category */}
-            {dataLoaded && (  // ✅ Only render Select after data is loaded
+            {dataLoaded && (
               <div>
                 <Label>Parent Category (Optional)</Label>
                 <Select
-                  key={formData.parent_id}  // ✅ Force re-render when value changes
+                  key={formData.parent_id}
                   value={formData.parent_id}
                   onValueChange={(value) =>
                     setFormData({ ...formData, parent_id: value })
@@ -185,21 +197,19 @@ export default function EditCategoryForm() {
                     className="bg-white dark:bg-gray-900 text-black dark:text-white border shadow-lg z-[9999]"
                     position="popper"
                   >
-                    <SelectItem value="none">
-                      No Parent
-                    </SelectItem>
+                    <SelectItem value="none">No Parent (Main Category)</SelectItem>
                     {parentCategories
-                      .filter((cat) => cat._id !== categoryId) // ✅ Exclude self
+                      .filter((cat) => cat._id !== categoryId)
                       .map((cat) => (
-                        <SelectItem
-                          key={cat._id}
-                          value={cat._id}
-                        >
+                        <SelectItem key={cat._id} value={cat._id}>
                           {cat.title}
                         </SelectItem>
                       ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Leave as "No Parent" to keep as main category. Select a parent to make it a subcategory.
+                </p>
               </div>
             )}
 
@@ -240,6 +250,7 @@ export default function EditCategoryForm() {
             >
               {loading ? "Updating..." : "Update Category"}
             </Button>
+
           </form>
         </CardContent>
       </Card>

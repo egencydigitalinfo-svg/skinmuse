@@ -1,13 +1,10 @@
 import { Link } from "react-router-dom";
-import { ShoppingBag, Heart, ShoppingCart } from "lucide-react";
+import { Heart, ShoppingCart, Star, Package } from "lucide-react";
 import { Product } from "@/types/product";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { useState, useRef } from "react";
 
 interface ProductCardProps {
   product: Product;
@@ -16,229 +13,252 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, index = 0 }: ProductCardProps) => {
   const { addToCart } = useCart();
-  const { items, addToWishlist, removeFromWishlist } = useWishlist(); // ✅ use `items` (from context)
+  const [added, setAdded] = useState(false);
+  const { items, addToWishlist, removeFromWishlist } = useWishlist();
   const brand = product.brand;
 
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-50px" });
-  const discountedPrice = product.discount
-    ? product.price - (product.price * product.discount) / 100
-    : product.price;
 
-  const hasColorStock =
-    product.colors && product.colors.some((c) => c.stock > 0);
-  const hasLitreStock =
-    product.litres && product.litres.some((l) => l.stock > 0);
-
+  const hasColorStock = product.colors?.some((c) => c.stock > 0);
+  const hasLitreStock = product.litres?.some((l) => l.stock > 0);
   const isOutOfStock =
-    (!product.stock || product.stock <= 0) &&
-    !hasColorStock &&
-    !hasLitreStock;
+    (!product.stock || product.stock <= 0) && !hasColorStock && !hasLitreStock;
 
   const totalStock =
     (product.stock || 0) +
-    (product.colors
-      ? product.colors.reduce((sum, c) => sum + c.stock, 0)
-      : 0) +
-    (product.litres
-      ? product.litres.reduce((sum, l) => sum + l.stock, 0)
-      : 0);
+    (product.colors?.reduce((sum, c) => sum + c.stock, 0) || 0) +
+    (product.litres?.reduce((sum, l) => sum + l.stock, 0) || 0);
 
+  const isInWishlist = items.some((item) => item.product._id === product._id);
 
-  // ✅ Check if product is in wishlist
-  const isInWishlist = items.some(
-    (item) => item.product._id === product._id
-  );
-
-  // ✅ Toggle wishlist add/remove
   const toggleWishlist = () => {
-    if (isInWishlist) {
-      removeFromWishlist(product._id);
-    } else {
-      addToWishlist(product);
-    }
+    isInWishlist ? removeFromWishlist(product._id) : addToWishlist(product);
   };
+
+  // Price calculation across all variants
+  const allPrices: number[] = [];
+  if (product.price) allPrices.push(product.price);
+  product.colors?.forEach((c: any) => c.price && allPrices.push(c.price));
+  product.litres?.forEach((l: any) => l.price && allPrices.push(l.price));
+
+  const minPrice = Math.min(...allPrices);
+  const discount = product.discount || 0;
+  const discountedMin = minPrice - (minPrice * discount) / 100;
 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 40, scale: 0.97 }}
-      animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+      initial={{ opacity: 0, y: 30 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
       transition={{
-        duration: 0.4,
-        delay: Math.min(index * 0.05, 0.4),
-        ease: "easeOut",
+        duration: 0.45,
+        delay: Math.min(index * 0.06, 0.35),
+        ease: [0.25, 0.1, 0.25, 1],
       }}
-      whileHover={{ scale: 1.02 }}
-      className={`h-full border border-foreground/20 bg-background/10 shadow-sm hover:shadow-lg hover:border-foreground/40 transition-all ${isOutOfStock ? "opacity-70" : ""
-        }`}
+      className="group h-full"
     >
-      <Card className="group overflow-hidden flex flex-col h-full bg-background text-foreground border-none rounded-2xl relative">
-        {/* === PRODUCT IMAGE === */}
-        <div className="relative">
-          <Link to={`/product/${product._id}`}>
-            <div className="aspect-square overflow-hidden rounded-t-2xl bg-foreground/10 relative">
-              <motion.img
-                src={product.images[0]}
-                alt={product.name}
-                className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                initial={{ scale: 1.05, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                whileHover={{ scale: 1.08 }}
-                transition={{
-                  duration: 0.3,
-                  ease: "easeOut",
-                  delay: index * 0.12,
-                }}
-              />
-
-              {/* Stock */}
-              <p className="mt-1 text-sm sm:text-base">
-                <span className="font-medium">Stock:</span>{" "}
-                {isOutOfStock ? (
-                  <span className="text-red-600">Out of Stock</span>
-                ) : (
-                  <span className="text-green-600">
-                    In Stock ({totalStock})
-                  </span>
-                )}
-              </p>
-
-              {/* Litres list */}
-              {product.litres && product.litres.length > 0 && (
-                <div className="mt-1 text-xs sm:text-sm text-foreground/70">
-                  <span className="font-medium">Litres:</span>{" "}
-                  {product.litres.map((l, i) => (
-                    <span key={i} className="mr-2">
-                      {l.name} ({l.stock})
-                    </span>
-                  ))}
-                </div>
-              )}
-
-            </div>
+      <div
+        className={`
+          relative flex flex-col h-full rounded-2xl overflow-hidden
+          bg-white dark:bg-zinc-900
+          border border-zinc-100 dark:border-zinc-800
+          shadow-sm hover:shadow-xl hover:shadow-black/8
+          transition-all duration-300 ease-out
+          hover:-translate-y-1
+          ${isOutOfStock ? "opacity-60" : ""}
+        `}
+      >
+        {/* ── IMAGE AREA ── */}
+        <div className="relative overflow-hidden bg-zinc-50 dark:bg-zinc-800">
+          <Link to={`/product/${product._id}`} className="block aspect-[4/3]">
+            <img
+              src={product.images[0]}
+              alt={product.name}
+              className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+            />
           </Link>
 
-          {/* ❤️ Wishlist Button */}
+          {/* Top pill row */}
+          <div className="absolute top-3 left-3 right-3 flex justify-between items-start pointer-events-none">
+            {/* Left: Stock badge */}
+            <span
+              className={`
+                text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm pointer-events-none
+                ${isOutOfStock
+                  ? "bg-red-500/90 text-white"
+                  : "bg-emerald-500/90 text-white"
+                }
+              `}
+            >
+              {isOutOfStock ? "Out of Stock" : `In Stock · ${totalStock}`}
+            </span>
+
+            {/* Right: Discount badge */}
+            {discount > 0 && !isOutOfStock && (
+              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-400 text-amber-900 pointer-events-none">
+                -{discount}%
+              </span>
+            )}
+          </div>
+
+          {/* Wishlist button */}
           <button
             onClick={toggleWishlist}
-            className="absolute top-2 left-2 sm:top-3 sm:left-3  rounded-full"
+            aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
+            className={`
+              absolute bottom-3 right-3
+              w-9 h-9 rounded-full flex items-center justify-center
+              backdrop-blur-sm border transition-all duration-200
+              ${isInWishlist
+                ? "bg-red-50 dark:bg-red-900/40 border-red-200 dark:border-red-700"
+                : "bg-white/80 dark:bg-zinc-900/70 border-zinc-200 dark:border-zinc-700 hover:bg-red-50 hover:border-red-200"
+              }
+            `}
           >
             <Heart
-              className={`h-5 w-5 sm:h-6 sm:w-6 transition-colors ${isInWishlist ? "fill-red-500 text-red-500" : "text-foreground"
-                }`}
+              className={`h-4 w-4 transition-colors ${
+                isInWishlist
+                  ? "fill-red-500 text-red-500"
+                  : "text-zinc-500 dark:text-zinc-400"
+              }`}
             />
           </button>
-
-          {/* Discount Badge */}
-          {product.discount && !isOutOfStock && (
-            <motion.span
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.2 + index * 0.1 }}
-              className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-ring text-background text-[10px] sm:text-xs md:text-sm font-semibold px-2 sm:px-3 py-1 rounded-full shadow-md"
-            >
-              {product.discount}% OFF
-            </motion.span>
-          )}
         </div>
 
-        {/* === CONTENT === */}
-        <CardContent className="p-4 sm:p-5 flex flex-col flex-grow">
-          {brand && (
-            <div className="flex items-center justify-between mb-2">
-              <Badge
-                variant="foreground"
-                className="text-xs sm:text-sm text-foreground"
-              >
-                {brand.name}
-              </Badge>
-            </div>
-          )}
+        {/* ── CONTENT ── */}
+        <div className="flex flex-col flex-grow p-4 gap-2">
 
+          {/* Brand + rating row */}
+          <div className="flex items-center justify-between">
+            {brand ? (
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-indigo-500 dark:text-indigo-400 p-2 rounded-full bg-[#fff] border border-zinc-200 dark:border-zinc-700 dark:bg-indigo-900/30">
+                {brand.name}
+              </span>
+            ) : (
+              <span />
+            )}
+            <span className="flex items-center gap-1 text-[11px] text-amber-500 font-medium">
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+              4.8
+            </span>
+          </div>
+
+          {/* Product name */}
           <Link to={`/product/${product._id}`}>
-            <h3 className="font-serif font-semibold text-base sm:text-lg md:text-xl mb-2 group-hover:text-accent transition-colors line-clamp-1">
+            <h3 className="font-semibold text-sm sm:text-base leading-snug text-zinc-900 dark:text-zinc-100 group-hover:text-[#CE0000] dark:group-hover:text-[#CE0000] transition-colors line-clamp-2">
               {product.name}
             </h3>
           </Link>
 
-
-
-          <p className="text-xs sm:text-sm text-foreground/70 mb-3 sm:mb-4 flex-grow">
-            {product.description.length > 50
-              ? product.description.slice(0, 50) + "..."
+          {/* Description */}
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed line-clamp-2 flex-grow">
+            {product.description.length > 70
+              ? product.description.slice(0, 70) + "…"
               : product.description}
           </p>
 
-          {/* Variant-wise price calculation */}
-          {(() => {
-            let allPrices: number[] = [];
+          {/* Litres pills */}
+          {product.litres && product.litres.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {product.litres.map((l, i) => (
+                <span
+                  key={i}
+                  className="text-[10px] px-2 py-0.5 rounded-full border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 font-medium"
+                >
+                  {l.name}
+                </span>
+              ))}
+            </div>
+          )}
 
-            // Base product price
-            if (product.price) allPrices.push(product.price);
+          {/* Divider */}
+          <div className="h-px bg-zinc-100 dark:bg-zinc-800 mt-1" />
 
-            // Color variants
-            if (product.colors && product.colors.length > 0) {
-              product.colors.forEach((c: any) => {
-                if (c.price) allPrices.push(c.price);
-              });
-            }
+          {/* Price + CTA */}
+          <div className="flex items-center justify-between gap-2 pt-1">
+            {/* Price block */}
+            <div className="flex flex-col">
+              {discount > 0 && (
+                <span className="text-[11px] line-through text-zinc-400 leading-none mb-0.5">
+                  Rs {minPrice.toFixed(0)}
+                </span>
+              )}
+              <span className="text-base sm:text-lg font-bold text-zinc-900 dark:text-zinc-50 leading-none">
+                Rs {discountedMin.toFixed(0)}
+              </span>
+            </div>
 
-            // Litre variants
-            if (product.litres && product.litres.length > 0) {
-              product.litres.forEach((l: any) => {
-                if (l.price) allPrices.push(l.price);
-              });
-            }
+            {/* Add to Cart button */}
+            {/* <button
+              disabled={isOutOfStock}
+              onClick={() => !isOutOfStock && addToCart(product)}
+              className={`
+                flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold
+                transition-all duration-200 active:scale-95
+                ${isOutOfStock
+                  ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed"
+                  : "bg-[#CE0000] hover:bg-[#CE0000] text-white shadow-sm hover:shadow-indigo-500/30 hover:shadow-md"
+                }
+              `}
+            >
+              {isOutOfStock ? (
+                <>
+                  <Package className="h-3.5 w-3.5" />
+                  Unavailable
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="h-3.5 w-3.5" />
+                  Add
+                </>
+              )}
+            </button> */}
+            <button
+              disabled={isOutOfStock}
+              onClick={() => {
+                if (isOutOfStock) return;
 
-            // Determine min and max price
-            const minPrice = Math.min(...allPrices);
-            const maxPrice = Math.max(...allPrices);
+                if (!added) {
+                  addToCart(product);
+                  setAdded(true);
+                } else {
+                  window.location.href = "/cart"; // or use navigate()
+                }
+              }}
+              className={`
+                flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold
+                transition-all duration-200 active:scale-95
+                ${
+                  isOutOfStock
+                    ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-400 cursor-not-allowed"
+                    : added
+                    ? "bg-green-600 hover:bg-green-700 text-white"
+                    : "bg-[#CE0000] text-white hover:shadow-md"
+                }
+              `}
+            >
+              {isOutOfStock ? (
+                <>
+                  <Package className="h-3.5 w-3.5" />
+                  Unavailable
+                </>
+              ) : added ? (
+                <>
+                  <ShoppingCart className="h-3.5 w-3.5" />
+                  View Cart
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="h-3.5 w-3.5" />
+                  Add
+                </>
+              )}
+            </button>
 
-            // Discount
-            const discount = product.discount || 0;
-            const discountedMin = minPrice - (minPrice * discount) / 100;
-            const discountedMax = maxPrice - (maxPrice * discount) / 100;
-
-            return (
-              <div className="flex flex-col gap-1 mt-1">
-                {discount > 0 && (
-                  <p className="text-xs sm:text-sm text-foreground/50 line-through">
-                    Rs {minPrice.toFixed(0)}
-                  
-                  </p>
-                )}
-                <p className="text-lg sm:text-xl font-semibold text-accent">
-                  Rs {discountedMin.toFixed(0)}
-               
-                </p>
-              </div>
-            );
-          })()}
-
-        </CardContent>
-
-        {/* === FOOTER === */}
-        <CardFooter className="p-4 sm:p-5 pt-0 mt-auto">
-          <Button
-            disabled={isOutOfStock}
-            onClick={() => !isOutOfStock && addToCart(product)}
-            className={`w-full text-xs sm:text-sm md:text-base ${isOutOfStock
-              ? "bg-gray-500 cursor-not-allowed"
-              : "bg-foreground/90 text-background hover:bg-foreground hover:shadow-md"
-              } transition-all`}
-          >
-            {isOutOfStock ? (
-              "Out of Stock"
-            ) : (
-              <>
-                <ShoppingCart className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                Add to Cart
-              </>
-            )}
-          </Button>
-        </CardFooter>
-      </Card>
+          </div>
+        </div>
+      </div>
     </motion.div>
   );
 };
